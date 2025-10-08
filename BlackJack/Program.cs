@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Drawing;
+using System.Numerics;
 
 namespace BlackJack
 {
@@ -6,105 +7,140 @@ namespace BlackJack
     {
         static void Main(string[] args)
         {
-            string line = "";
             int timing = 30; //Standard timing
-            int currentCard = 0;
-            bool pass = false;
             bool exit = false;
-            bool playerWon = false;
-
-            Cards dealer = new Cards("the Dealer");
-            Cards player = new Cards("the Player");
-
-            //Intro();
-
-            play(player);
-            play(dealer);
-
-            SpellItOut("Dealer: " + dealer.GetTotalValue() + ", Player: " + player.GetTotalValue(), timing);
+            Wallet playerWallet = new Wallet();
+            User[] users = new User().FindExistingUsers();
 
 
-            while (exit == false)
+
+            Intro();
+
+            while (!exit)
             {
-                if (pass == false) 
-                {
-                    Console.ForegroundColor = ConsoleColor.DarkGray;
-                    Console.WriteLine("1: another card, 2. stay");
-                    Console.ForegroundColor = ConsoleColor.White;
-                }
+                bool playerWon = false;
+                bool pass = false;
 
-                if (YesOrNo() == true)
-                {
-                    pass = false;
-                }
-                else
-                {
-                    pass = true;
-                }
+                Cards dealer = new Cards("the Dealer");
+                Cards player = new Cards("the Player");
+                
 
-                // Play
-                if (pass == false)
+                if (playerWallet.WalletValue <= 0)
                 {
-                    play(player);
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    SpellItOut("You're broke, get out of here!", 10);                   
+                    exit = true;
+                    continue;
                 }
+                Console.Clear();
+                playerWallet.Bet();
+                play(player);
                 play(dealer);
 
-                SpellItOut("Dealer: " + dealer.GetTotalValue() + ", Player: " + player.GetTotalValue(), timing);
-                //---
+                SpellItOut("Dealer: " + dealer.TotalValue + ", Player: " + player.TotalValue, timing);
 
-
-                // Win check
-                if (player.CheckStat() == 1 || dealer.CheckStatAgainstThis(player.GetTotalValue()) || dealer.CheckStat() == 2) //If the player has gotten a total value of more than 21 OR if the player have passed and the dealer got a higher total value than the player under 21 OR the dealer got 21..
+                //Game start
+                while (!exit)
                 {
-                    exit = true;
-                    //You lost
+                    // Player turn
+                    if (!pass) //If the player didn't pass last round
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.WriteLine("1: another card, 2. stay");
+                        Console.ForegroundColor = ConsoleColor.White;
+
+                        if (YesOrNo())
+                        {
+                            pass = false;
+                            play(player);
+                        }
+                        else { pass = true;}
+                    }
+
+                    if (dealer.CheckStatAgainstThis(player.TotalValue) && pass) //If the player is stupid and decides to kill itself
+                    {
+                        exit = true;
+                        continue; 
+                    }
+                    if (player.TotalValue > 21)
+                    {
+                        exit = true;
+                        continue;
+                    }
+
+                    play(dealer); //dealer plays until he wins or looses
+
+                    
+
+
+                    // Win check
+                    if (player.CheckStat() == 1 || dealer.CheckStat() == 2) //If the player has gotten a total value of more than 21 OR the dealer got 21..
+                    {
+                        exit = true;
+                        //You lost
+                    }
+                    else if (pass && dealer.CheckStatAgainstThis(player.TotalValue)) //If the player have passed and the dealer gets a higher alue than the player below 21
+                    {
+                        exit = true;
+                        //You lost
+                    }
+                    else if (player.CheckStat() == 2 || dealer.CheckStat() == 1) //If the player got 21 or if the dealer got more than 21
+                    {
+                        exit = true;
+                        playerWon = true;
+                        //You have won
+                    }
+
+                    SpellItOut("Dealer: " + dealer.TotalValue + ", Player: " + player.TotalValue, timing);
+                    Thread.Sleep(1000);
                 }
-                else if (player.CheckStat() == 2 || dealer.CheckStat() == 1) //If the player got 21 or if the dealer got more than 21
+                if (playerWallet.WalletValue <= 0)
                 {
-                    exit = true;
-                    playerWon = true;
-                    //You have won
+                    continue;
                 }
-
-
-            }
-
-            if (playerWon == true)
-            {
-                SpellItOut("Dealer: " + dealer.GetTotalValue() + ", Player: " + player.GetTotalValue(), timing);
-                Console.WriteLine("Player won");
-            }
-            else
-            {
-                SpellItOut("Dealer: " + dealer.GetTotalValue() + ", Player: " + player.GetTotalValue(), timing);
-                Console.WriteLine("Player lost");
+                exit = EndGame(playerWon, dealer.TotalValue, player.TotalValue, playerWallet);
             }
 
         }
         //Methods
 
-        static int play(Cards cards)
+        static void LogIn()
         {
+            Console.WriteLine("New or existing user?");
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine("1: New, 2: Existing");
 
-            SpellItOut(cards.GetName() + " receaved a " + cards.GiveNewCard(), 30);
-            cards.GetCurrentCardGraphic();
-            Thread.Sleep(2000);
+            if (YesOrNo())
+            {
+                string name;
+                string password;
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine("User name?");
+                name = Console.ReadLine();
+                Console.Clear();
+                Console.WriteLine("Password?");
+                password = Console.ReadLine();
 
-            return cards.GetCardValue();
+                //Hej Nikki!
+                //Du behöver lägga till hur mycket pengar varje användare har och ändra "kill user"
+                // Ide: Skapa en fil i wallet också och använd ID så man kan matcha ihop dom. 
+
+            }
+
         }
         static void Intro()
         {
             string line = "";
-            int timing = 50; //Standard timing
+            int timing = 20; //Standard timing
 
             //Story
             line = "Hello there, Creature!";
             SpellItOut(line, timing);
-            Thread.Sleep(1000); //1 sek
+            Console.ReadKey(intercept: true);
 
             line = "I am the dealer, and this is Black Jack";
             SpellItOut(line, timing);
-            Thread.Sleep(1000);
+            Console.ReadKey(intercept: true);
 
             line = "Have you played Black Jack before?";
             timing = 30;
@@ -120,13 +156,60 @@ namespace BlackJack
 
             line = "Lets start";
             SpellItOut(line, timing);
+            Thread.Sleep(1000);
         }
+
+        static int play(Cards cards)
+        {
+            SpellItOut(cards.name + " receaved a " + cards.GiveNewCard(), 30);
+            cards.CardGraphic(cards.CurrentCard);
+            Thread.Sleep(2000);
+
+            return cards.CurrentCardGameValue;
+        }
+
+        static bool EndGame(bool playerWinCheck, int dealerSum, int playerSum, Wallet playerWallet)
+        {
+
+            if (playerWinCheck == true)
+            {
+                WinMessage();
+                Console.WriteLine();
+                playerWallet.Result(true);
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Player lost :( ");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine();
+                playerWallet.Result(false);
+            }
+
+            Console.WriteLine("play again?");
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine("Yes: 1, No: 2");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine();
+            return !YesOrNo();
+        }
+
+       
         static void SpellItOut(string line, int timing)
         {
             string stringToFill = "";
 
             for (int i = 0; i < line.Length; i++)
             {
+                if (Console.KeyAvailable)
+                {
+                    Console.ReadKey(intercept: true);
+                    i = line.Length;
+                    Console.Clear();
+                    Console.WriteLine(line);
+                    continue;
+                }              
+
                 Console.Clear();
                 stringToFill += line[i];
                 Console.WriteLine(stringToFill);
@@ -154,6 +237,21 @@ namespace BlackJack
             }
             return false;
         }
+
+        static void WinMessage()
+        {
+            ConsoleColor[] colors = (ConsoleColor[])ConsoleColor.GetValues(typeof(ConsoleColor));
+
+            foreach (var color in colors)
+            {
+                if (color == Console.BackgroundColor) continue;
+                Console.Clear();
+                Console.ForegroundColor = color;
+                Console.WriteLine("PLAYER WON!");
+                Thread.Sleep(200);
+            }
+
+        }
         static void Tutorial()
         {
             Console.Clear();
@@ -163,7 +261,12 @@ namespace BlackJack
             Console.WriteLine("The goal is to get as close to the total sum of 21 as you can");
             Console.WriteLine("Each round you get to choose if you want to get a new card to add to your sum");
             Console.WriteLine("If your sum ends up bigger than 21, you loose");
+            Console.WriteLine("Clothed cards are worth 10");
+            Console.WriteLine("Ace is worth 1 or 11 depending on if it will kill you if the value is 11");
             Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine("Enter to continnue");
+            Console.ForegroundColor = ConsoleColor.White;
             Console.ReadKey();
         }
     }

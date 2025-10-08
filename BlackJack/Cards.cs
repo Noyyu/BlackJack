@@ -8,24 +8,25 @@ namespace BlackJack
 {
     internal class Cards
     {
-        private int totalValue = 0;
-        private int currentCard = 0;
-        private string name = "unnamed";
+        public int TotalValue         { get; set; } = 0;
+        public int CurrentCard       { get; set; } = 0; // usual card value (ace is 1, queen is 12)
+        public int CurrentCardGameValue  { get; set; } // the current card value as in, the ace can be 1 or 11 and a queen is 10
+        public string name           { get; set; } = "unnamed";
 
-        private bool lost = false;
-        private bool won = false;
+        private bool lost    = false;
+        private bool won     = false;
 
 
 
         public Cards(string playerName)
         {
-            this.totalValue = 0;
-            this.currentCard = 0;
+            this.TotalValue = 0;
+            this.CurrentCard = 0;
             this.name = playerName;
         }
          public bool CheckStatAgainstThis(int playerSum)
         {
-            if (this.totalValue > playerSum && this.totalValue <= 21)
+            if (this.TotalValue > playerSum && this.TotalValue <= 21)
             {
                 return true;
             }
@@ -33,12 +34,12 @@ namespace BlackJack
         }
         public int CheckStat()
         {
-            if (this.totalValue > 21)
+            if (this.TotalValue > 21)
             {
                 this.lost = true;
                 return 1;
             }
-            else if (this.totalValue == 21)
+            else if (this.TotalValue == 21)
             {
                 this.won = true;
                 return 2;
@@ -49,28 +50,29 @@ namespace BlackJack
         {
             int cardValue = new Random().Next(1, 14); //1-13
 
-            totalValue += cardValue;
-            currentCard = cardValue;
+            this.CurrentCard = cardValue; //Sets the normal card value
+            this.CurrentCardGameValue = cardValue; //Sets the game rule card calue
 
-            return currentCard;
+            if (cardValue == 11 || cardValue == 12 || cardValue == 13) // Klädda kort är lika med 10
+            {
+                this.CurrentCardGameValue = 10; //Sets the game rule card calue
+
+            }
+            if (cardValue == 1 && (TotalValue + 11) <= 21) // Om spelaren får ett Ess och totala summan är lika med eller mindre än 21 (om man lägger på 11) så är ess lika med 11, annars är den lika med 1.
+            {
+                this.CurrentCardGameValue = 11; //Sets the game rule card calue
+
+            }
+
+            TotalValue += this.CurrentCardGameValue; //Adds the game rule card value to the total sum
+            return CurrentCardGameValue;
         }
-        public int GetCardValue()
-        {
-            return this.currentCard;
-        }
-        public string GetName()
-        {
-            return this.name;
-        }
-        public void GetCurrentCardGraphic()
-        {
-            CardGraphic(currentCard);
-        }
-        public int GetTotalValue()
-        {
-            return this.totalValue;
-        }
-        private static void CardGraphic(int card)
+
+        public void GetCurrenCardGraphic (int cardValue)
+            {
+            CardGraphic(cardValue);
+            }
+        public  void CardGraphic(int card)
         {
             if (card == 1)
             {
